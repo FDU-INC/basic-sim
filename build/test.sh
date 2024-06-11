@@ -41,6 +41,7 @@ if [ "$1" == "" ] || [ "$1" == "--distributed" ] || [ "$2" == "--distributed" ] 
 
   # Baseline
   bash run_assist.sh "example_run_folders/leaf_spine" 0 || exit 1
+  bash run_assist.sh "example_run_folders/ip_trick" 0 || exit 1
 
   # 1 core tests
   bash run_assist.sh "example_run_folders/leaf_spine_distributed_1_core_default" 1 || exit 1
