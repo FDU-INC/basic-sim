@@ -1,5 +1,5 @@
 #include "ns3/arbiter.h"
-
+#include "ns3/log.h"
 namespace ns3 {
 
 // Arbiter result
@@ -60,10 +60,12 @@ Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enabl
 
 uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
     if(m_tap_bridge_enable){
-        // Using XXX.X as XXX.2 
+        NS_LOG_INFO("Original IP: " << Ipv4Address(ip));
         if(ip-((ip>>8)<<8)!=1)
             ip=((ip>>8)<<8)+2;
+        NS_LOG_INFO("Processed IP: " << Ipv4Address(ip));
     }
+    
     m_ip_to_node_id_it = m_ip_to_node_id.find(ip);
     if (m_ip_to_node_id_it != m_ip_to_node_id.end()) {
         return m_ip_to_node_id_it->second;
