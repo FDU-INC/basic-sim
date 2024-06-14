@@ -56,14 +56,23 @@ Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enabl
     m_node_id = this_node->GetId();
     m_nodes = nodes;
     m_tap_bridge_enable = tap_bridge_enable;
+    // Store IP address to node id (each interface has an IP address, so multiple IPs per node)
+    for (uint32_t i = 0; i < m_nodes.GetN(); i++) {
+        for (uint32_t j = 1; j < m_nodes.Get(i)->GetObject<Ipv4>()->GetNInterfaces(); j++) {
+            m_ip_to_node_id.insert({m_nodes.Get(i)->GetObject<Ipv4>()->GetAddress(j, 0).GetLocal().Get(), i});
+        }
+    }
 }
 
 uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
     if(m_tap_bridge_enable){
-        NS_LOG_INFO("Original IP: " << Ipv4Address(ip));
-        if(ip-((ip>>8)<<8)!=1)
-            ip=((ip>>8)<<8)+2;
-        NS_LOG_INFO("Processed IP: " << Ipv4Address(ip));
+        // NS_LOG_INFO("Original IP: " << Ipv4Address(ip));
+        
+        if ((ip & 0xFF) != 1) {  // 检查IP地址的最低8位是否为1
+            ip = (ip & 0xFFFFFF00) | 2;  // 如果不是1，将最低8位设置为2
+        }
+
+        // NS_LOG_INFO("Processed IP: " << Ipv4Address(ip));
     }
     
     m_ip_to_node_id_it = m_ip_to_node_id.find(ip);
