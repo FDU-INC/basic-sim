@@ -13,6 +13,7 @@ namespace ns3 {
     {
     public:
         static void InstallArbiters (Ptr<BasicSimulation> basicSimulation, Ptr<TopologyPtop> topology);
+        static void InstallArbiters (Ptr<BasicSimulation> basicSimulation, Ptr<TopologyPtop> topology, bool tap_bridge_enable);
     private:
         static std::vector<std::vector<std::vector<uint32_t>>> CalculateGlobalState(Ptr<TopologyPtop> topology);
     };

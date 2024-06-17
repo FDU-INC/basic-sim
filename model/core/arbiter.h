@@ -43,6 +43,7 @@ class Arbiter : public Object
 public:
     static TypeId GetTypeId (void);
     Arbiter(Ptr<Node> this_node, NodeContainer nodes);
+    Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable);
 
     /**
      * Resolve the node identifier from an IP address.
@@ -114,7 +115,7 @@ protected:
 private:
     std::map<uint32_t, uint32_t> m_ip_to_node_id;
     std::map<uint32_t, uint32_t>::iterator m_ip_to_node_id_it;
-
+    bool m_tap_bridge_enable;
 };
 
 }
