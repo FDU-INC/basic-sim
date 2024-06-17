@@ -101,6 +101,7 @@ void BasicSimulation::ReadConfig() {
     // Seed
     m_simulation_seed = parse_positive_int64(GetConfigParamOrFail("simulation_seed"));
 
+    m_enable_tap_bridge = parse_boolean(GetConfigParamOrDefault("enable_tap_bridge", "false"));
 }
 
 void BasicSimulation::ConfigureSimulation() {
@@ -165,6 +166,11 @@ void BasicSimulation::ConfigureSimulation() {
         m_distributed_node_system_id_assignment.clear();
         m_system_id = 0;
         m_systems_count = 1;
+        if(m_enable_tap_bridge){
+            // Set Real-time simulation
+            GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
+            GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
+        }
     }
 
     // System information
