@@ -27,6 +27,7 @@ class ArbiterPtop : public Arbiter
 public:
     static TypeId GetTypeId (void);
     ArbiterPtop(Ptr<Node> this_node, NodeContainer nodes, Ptr<TopologyPtop> topology);
+    ArbiterPtop(Ptr<Node> this_node, NodeContainer nodes, Ptr<TopologyPtop> topology, bool tap_bridge_enable);
 
     // Topology implementation
     ArbiterResult Decide(
