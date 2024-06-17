@@ -90,6 +90,57 @@ public:
     }
 };
 
+class ArbiterIpTrickTestCase : public TestCase
+{
+public:
+    ArbiterIpTrickTestCase () : TestCase ("trick-arbiter basic") {};
+    void DoRun () {
+        prepare_arbiter_test();
+
+        bool tap_bridge_enable= true;
+
+        // Create topology
+        Ptr<BasicSimulation> basicSimulation = CreateObject<BasicSimulation>(arbiter_test_dir);
+        Ptr<TopologyPtop> topology = CreateObject<TopologyPtop>(basicSimulation, Ipv4ArbiterRoutingHelper());
+
+        // Create nodes, setup links and create arbiter
+        NodeContainer nodes = topology->GetNodes();
+        std::vector<std::pair<uint32_t, uint32_t>> interface_idxs_for_edges = topology->GetInterfaceIdxsForEdges();
+        ArbiterEcmpHelper::InstallArbiters(basicSimulation, topology, tap_bridge_enable);
+
+        // Test valid IPs
+        Ptr<Arbiter> arbiter = nodes.Get(0)->GetObject<Ipv4>()->GetRoutingProtocol()->GetObject<Ipv4ArbiterRouting>()->GetArbiter();
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.0.1").Get()), 0);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.0.2").Get()), 1);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.1.1").Get()), 0);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.1.2").Get()), 3);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.2.1").Get()), 1);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.2.2").Get()), 2);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.3.1").Get()), 2);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.3.2").Get()), 3);
+
+        // All other should be invalid, a few examples
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.0.4").Get()), 1);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.0.5").Get()), 1);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.0.6").Get()), 1);
+
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.2.3").Get()), 2);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.2.8").Get()), 2);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.2.7").Get()), 2);
+
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.1.3").Get()), 3);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.1.4").Get()), 3);
+        ASSERT_EQUAL(arbiter->ResolveNodeIdFromIp(Ipv4Address("10.0.3.5").Get()), 3);
+
+        for(int i=0;i<23;i++){
+            std::cout << "Hash" << i << std::endl;
+        }
+        basicSimulation->Finalize();
+        cleanup_arbiter_test();
+
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 struct ecmp_fields_t {
