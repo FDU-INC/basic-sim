@@ -108,7 +108,8 @@ private:
     uint32_t m_systems_count;
     bool m_enable_distributed;
     std::vector<int64_t> m_distributed_node_system_id_assignment;
-
+    bool m_enable_tap_bridge;
+    bool m_enable_time_selection;
     // Progress show variables
     int64_t m_sim_start_time_ns_since_epoch;
     int64_t m_last_log_time_ns_since_epoch;

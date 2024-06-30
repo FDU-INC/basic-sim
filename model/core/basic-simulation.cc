@@ -101,6 +101,8 @@ void BasicSimulation::ReadConfig() {
     // Seed
     m_simulation_seed = parse_positive_int64(GetConfigParamOrFail("simulation_seed"));
 
+    m_enable_tap_bridge = parse_boolean(GetConfigParamOrDefault("enable_tap_bridge", "false"));
+    m_enable_time_selection = parse_boolean(GetConfigParamOrDefault("enable_time_selection", "false"));
 }
 
 void BasicSimulation::ConfigureSimulation() {
@@ -165,6 +167,12 @@ void BasicSimulation::ConfigureSimulation() {
         m_distributed_node_system_id_assignment.clear();
         m_system_id = 0;
         m_systems_count = 1;
+        if (m_enable_tap_bridge)
+        {
+            // Set Real-time simulation
+            GlobalValue::Bind("SimulatorImplementationType", StringValue("ns3::RealtimeSimulatorImpl"));
+            GlobalValue::Bind("ChecksumEnabled", BooleanValue(true));
+        }
     }
 
     // System information
@@ -176,8 +184,16 @@ void BasicSimulation::ConfigureSimulation() {
     std::cout << "  > Seed............. " << m_simulation_seed << std::endl;
 
     // Set end time
-    Simulator::Stop(NanoSeconds(m_simulation_end_time_ns));
-    printf("  > Duration......... %.2f s (%" PRId64 " ns)\n", m_simulation_end_time_ns / 1e9, m_simulation_end_time_ns);
+    if(m_enable_time_selection){
+        printf("Time Selection Enable\n");
+        // Set the emulation time to infinite
+        Simulator::Stop(NanoSeconds(m_simulation_end_time_ns * 100000000)); 
+        printf("  > Duration......... %.2f s (%" PRId64 " ns)\n", m_simulation_end_time_ns * 100 / 1e9, m_simulation_end_time_ns * 100);
+    }else{
+        printf("Time Selection Disabled\n");
+        Simulator::Stop(NanoSeconds(m_simulation_end_time_ns));
+        printf("  > Duration......... %.2f s (%" PRId64 " ns)\n", m_simulation_end_time_ns / 1e9, m_simulation_end_time_ns);
+    }
 
     std::cout << std::endl;
     RegisterTimestamp("Configure simulator");

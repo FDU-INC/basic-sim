@@ -26,6 +26,14 @@ public:
             std::vector<std::vector<uint32_t>> candidate_list
     );
 
+     ArbiterEcmp(
+            Ptr<Node> this_node,
+            NodeContainer nodes,
+            Ptr<TopologyPtop> topology,
+            std::vector<std::vector<uint32_t>> candidate_list,
+            bool tap_bridge_enable
+    );
+
     // ECMP implementation
     int32_t TopologyPtopDecide(
             int32_t source_node_id,
