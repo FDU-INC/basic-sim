@@ -172,7 +172,8 @@ namespace ns3 {
 
         // Multi-cast
         if (ipHeader.GetDestination().IsMulticast()) {
-            throw std::runtime_error("Multi-cast not supported.");
+            NS_LOG_WARN("Multi-cast not supported.");
+            return false;
         }
 
         // Local delivery

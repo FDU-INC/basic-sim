@@ -1,5 +1,5 @@
 #include "ns3/arbiter.h"
-
+#include "ns3/log.h"
 namespace ns3 {
 
 // Arbiter result
@@ -43,7 +43,21 @@ TypeId Arbiter::GetTypeId (void)
 Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes) {
     m_node_id = this_node->GetId();
     m_nodes = nodes;
+    m_tap_bridge_enable = false;
+    // Store IP address to node id (each interface has an IP address, so multiple IPs per node)
+    for (uint32_t i = 0; i < m_nodes.GetN(); i++)
+    {
+        for (uint32_t j = 1; j < m_nodes.Get(i)->GetObject<Ipv4>()->GetNInterfaces(); j++)
+        {
+            m_ip_to_node_id.insert({m_nodes.Get(i)->GetObject<Ipv4>()->GetAddress(j, 0).GetLocal().Get(), i});
+        }
+    }
+}
 
+Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable) {
+    m_node_id = this_node->GetId();
+    m_nodes = nodes;
+    m_tap_bridge_enable = tap_bridge_enable;
     // Store IP address to node id (each interface has an IP address, so multiple IPs per node)
     for (uint32_t i = 0; i < m_nodes.GetN(); i++) {
         for (uint32_t j = 1; j < m_nodes.Get(i)->GetObject<Ipv4>()->GetNInterfaces(); j++) {
@@ -54,6 +68,12 @@ Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes) {
 }
 
 uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
+    if(m_tap_bridge_enable){
+        if ((ip & 0xFF) != 1 && (ip & 0xFF) != 0) {
+            ip = (ip & 0xFFFFFF00) | 2; 
+        }
+    }
+    
     m_ip_to_node_id_it = m_ip_to_node_id.find(ip);
     if (m_ip_to_node_id_it != m_ip_to_node_id.end()) {
         return m_ip_to_node_id_it->second;

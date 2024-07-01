@@ -22,6 +22,26 @@ void ArbiterEcmpHelper::InstallArbiters (Ptr<BasicSimulation> basicSimulation, P
     std::cout << std::endl;
 }
 
+void ArbiterEcmpHelper::InstallArbiters (Ptr<BasicSimulation> basicSimulation, Ptr<TopologyPtop> topology, bool tap_bridge_enable) {
+    std::cout << "SETUP ECMP ROUTING" << std::endl;
+
+    NodeContainer nodes = topology->GetNodes();
+
+    // Calculate and instantiate the routing
+    std::cout << "  > Calculating ECMP routing" << std::endl;
+    std::vector<std::vector<std::vector<uint32_t>>> global_ecmp_state = CalculateGlobalState(topology);
+    basicSimulation->RegisterTimestamp("Calculate ECMP routing state");
+
+    std::cout << "  > Setting the routing arbiter on each node" << std::endl;
+    for (int i = 0; i < topology->GetNumNodes(); i++) {
+        Ptr<ArbiterEcmp> arbiterEcmp = CreateObject<ArbiterEcmp>(nodes.Get(i), nodes, topology, global_ecmp_state[i],tap_bridge_enable);
+        nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->GetObject<Ipv4ArbiterRouting>()->SetArbiter(arbiterEcmp);
+    }
+    basicSimulation->RegisterTimestamp("Setup routing arbiter on each node");
+
+    std::cout << std::endl;
+}
+
 // This is static
 std::vector<std::vector<std::vector<uint32_t>>> ArbiterEcmpHelper::CalculateGlobalState(Ptr<TopologyPtop> topology) {
 
