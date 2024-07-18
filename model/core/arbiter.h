@@ -19,6 +19,15 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-header.h"
 #include "ns3/exp-util.h"
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <cstring>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <cstdint>
 
 namespace ns3 {
 
@@ -41,9 +50,12 @@ class Arbiter : public Object
 {
 
 public:
+    // int createAndConnectSocket(const char* server_ip, int port);
     static TypeId GetTypeId (void);
     Arbiter(Ptr<Node> this_node, NodeContainer nodes);
     Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable);
+    Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable, int socket);
+
 
     /**
      * Resolve the node identifier from an IP address.
@@ -113,6 +125,7 @@ protected:
     ns3::NodeContainer m_nodes;
 
 private:
+    int m_socket;
     std::map<uint32_t, uint32_t> m_ip_to_node_id;
     std::map<uint32_t, uint32_t>::iterator m_ip_to_node_id_it;
     bool m_tap_bridge_enable;

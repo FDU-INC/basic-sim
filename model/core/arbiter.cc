@@ -65,6 +65,20 @@ Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enabl
 
 }
 
+Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable, int socket) {
+    m_socket = socket;
+    m_node_id = this_node->GetId();
+    m_nodes = nodes;
+    m_tap_bridge_enable = tap_bridge_enable;
+    // Store IP address to node id (each interface has an IP address, so multiple IPs per node)
+    for (uint32_t i = 0; i < m_nodes.GetN(); i++) {
+        for (uint32_t j = 1; j < m_nodes.Get(i)->GetObject<Ipv4>()->GetNInterfaces(); j++) {
+            m_ip_to_node_id.insert({m_nodes.Get(i)->GetObject<Ipv4>()->GetAddress(j, 0).GetLocal().Get(), i});
+        }
+    }
+
+}
+
 uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
     if(m_tap_bridge_enable){
         if ((ip & 0xFF) != 1) {
@@ -82,6 +96,30 @@ uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
     }
 }
 
+// int Arbiter::createAndConnectSocket(const char* server_ip, int port) {
+//         int sock = 0;
+//         struct sockaddr_in serv_addr;
+
+//         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+//             throw std::runtime_error("Socket creation error");
+//         }
+
+//         serv_addr.sin_family = AF_INET;
+//         serv_addr.sin_port = htons(port);
+
+//         if (inet_pton(AF_INET, server_ip, &serv_addr.sin_addr) <= 0) {
+//             close(sock);
+//             throw std::runtime_error("Invalid address/ Address not supported");
+//         }
+
+//         if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+//             close(sock);
+//             throw std::runtime_error("Connection failed");
+//         }
+
+//         return sock;
+//     }
+
 ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHeader) {
 
     // Retrieve the source node id
@@ -92,13 +130,69 @@ ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHea
     // which is set by TcpSocketBase::SetupEndpoint to discover its actually source IP.
     bool is_socket_request_for_source_ip = source_ip == 1717986918;
 
+    // const char* server_ip = "127.0.0.1";
+    //     int port = 6001;
+    //     int sock = createAndConnectSocket(server_ip, port);
+    //     if (sock == -1) {
+    //         throw std::runtime_error("Socket creation failed");
+    //     }
+
     // If it is a request for source IP, the source node id is just the current node.
     if (is_socket_request_for_source_ip) {
         source_node_id = m_node_id;
     } else {
-        source_node_id = ResolveNodeIdFromIp(source_ip);
+        if ((source_ip & 0xFF) != 1) {
+            source_ip = (source_ip & 0xFFFFFF00) | 2; 
+        }
+        std::cerr << "source_ip" << source_ip << std::endl;
+
+        std::string message = std::to_string(source_ip);
+        message = "this is info of asking map " + message +"\0";
+        std::cerr << "message" << message << std::endl;
+        if (send(this->m_socket, message.c_str(), message.size(), 0) < 0) {
+            close(this->m_socket);
+            throw std::runtime_error("Send failed");
+        }
+        
+        std::cerr << "sending out the fucking message" << std::endl;
+        // 接收服务器的回复
+        char server_reply[2000];
+        if (recv(this->m_socket, server_reply, 2000, 0) < 0) {
+            std::cerr << "Recv failed" << std::endl;
+        }
+        std::cerr << "receive the fucking message" << std::endl;
+
+        std::cout << "Server reply: " << server_reply << std::endl;
+        uint32_t parameter = std::stoi(server_reply);
+        std::cerr << "Server reply parameter" << parameter << std::endl;
+        source_node_id = parameter;
+
+        // std::string stop_instruction = "stop";
+        // send(this->m_socket, stop_instruction.c_str(), stop_instruction.size(), 0);
     }
-    uint32_t target_node_id = ResolveNodeIdFromIp(ipHeader.GetDestination().Get());
+    uint32_t second_parameter = ipHeader.GetDestination().Get();
+    if ((second_parameter & 0xFF) != 1) {
+        second_parameter = (second_parameter & 0xFFFFFF00) | 2; 
+    }
+    std::cerr << "second_parameter" << second_parameter << std::endl;
+    std::string message = std::to_string(second_parameter);
+    message = "this is info of asking map " + message + "\0";
+    if (send(this->m_socket, message.c_str(), message.size(), 0) < 0) {
+        close(this->m_socket);
+        throw std::runtime_error("Send failed");
+    }
+    // 接收服务器的回复
+    char server_reply2[2000];
+    if (recv(this->m_socket, server_reply2, 2000, 0) < 0) {
+        std::cerr << "Recv failed" << std::endl;
+    }
+    // std::cout << "Server reply: " << server_reply << std::endl;
+    uint32_t parameter = std::stoi(server_reply2);
+    std::cerr << "parameter2" << parameter << std::endl;
+    uint32_t target_node_id = parameter;
+
+    // std::string stop_instruction = "stop";
+    // send(this->m_socket, stop_instruction.c_str(), stop_instruction.size(), 0);
 
     // Decide the next node
     return Decide(
