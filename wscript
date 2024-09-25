@@ -7,6 +7,10 @@ def build(bld):
 
     # Source files
     module.source = [
+        'model/core/message.cc',
+        'helper/core/socket-helper.cc',
+        'helper/core/message-send-helper.cc',
+        'helper/core/message-receive-helper.cc',
         'model/core/basic-simulation.cc',
         'model/core/exp-util.cc',
         'model/core/log-update-helper.cc',
@@ -50,6 +54,11 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'basic-sim'
     headers.source = [
+        'model/core/json.h',
+        'model/core/message.h',
+        'helper/core/socket-helper.h',
+        'helper/core/message-send-helper.h',
+        'helper/core/message-receive-helper.h',
         'model/core/basic-simulation.h',
         'model/core/exp-util.h',
         'model/core/log-update-helper.h',
