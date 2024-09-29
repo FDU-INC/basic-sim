@@ -120,10 +120,9 @@ ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHea
     ArbiterMessage m_arbiter_message;
     m_arbiter_message.source_ip = ipHeader.GetSource().Get();
     m_arbiter_message.target_ip = ipHeader.GetDestination().Get();
-    bool is_socket_request_for_source_ip = (m_arbiter_message.source_ip == 1717986918);
-    if(is_socket_request_for_source_ip){
-        m_arbiter_message.source_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
-    }
+    // bool is_socket_request_for_source_ip = (m_arbiter_message.source_ip == 1717986918);
+
+    m_arbiter_message.source_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
     if ((m_arbiter_message.source_ip & 0xFF) != 1) {
         m_arbiter_message.source_ip = (m_arbiter_message.source_ip & 0xFFFFFF00) | 2; 
     }
