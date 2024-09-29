@@ -76,9 +76,9 @@ public:
 
 class ForwardingMessage : public Message {
 public:
-    int next_hop;
     int interface1;
     int interface2;
+    int next_hop_id;
 
     ForwardingMessage() {
         type = "ForwardingMessage";
@@ -87,9 +87,9 @@ public:
     json to_json() const override {
         return json{
             {"type", type},
-            {"next_hop", next_hop},
             {"interface1", interface1},
-            {"interface2", interface2}
+            {"interface2", interface2},
+            {"next_hop_id", next_hop_id}
         };
     }
 };

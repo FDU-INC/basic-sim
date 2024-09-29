@@ -28,9 +28,9 @@ Message* Message::from_json(const json& j) {
     }
     else if (type == "ForwardingMessage") {
         auto* msg = new ForwardingMessage();
-        msg->next_hop = j.at("next_hop").get<int>();
         msg->interface1 = j.at("interface1").get<int>();
         msg->interface2 = j.at("interface2").get<int>();
+        msg->next_hop_id = j.at("next_hop_id").get<int>();
         return msg;
     }
     else {

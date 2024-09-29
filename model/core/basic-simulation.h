@@ -44,6 +44,7 @@
 #include "ns3/command-line.h"
 #include "ns3/traffic-control-helper.h"
 #include "ns3/mpi-interface.h"
+#include "ns3/socket-helper.h"
 
 #include "ns3/exp-util.h"
 
@@ -53,7 +54,6 @@ class BasicSimulation : public Object
 {
 
 public:
-
     // Primary
     static TypeId GetTypeId (void);
     BasicSimulation(std::string run_dir);
@@ -73,6 +73,7 @@ public:
     std::string GetConfigParamOrDefault(std::string key, std::string default_value);
     std::string GetLogsDir();
     std::string GetRunDir();
+    SocketHelper* GetSocketHelper();
 
 private:
 
@@ -116,7 +117,7 @@ private:
     int m_counter_progress_updates = 0;
     double m_progress_interval_ns = 10000000000; // First one after 10s
     double m_simulation_event_interval_s = 0.1; // Start at 100ms for a reasonable estimate
-
+    SocketHelper* m_socket_helper;
 };
 
 }

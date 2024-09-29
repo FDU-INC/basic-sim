@@ -106,6 +106,7 @@ void BasicSimulation::ReadConfig() {
 }
 
 void BasicSimulation::ConfigureSimulation() {
+    m_socket_helper = new SocketHelper("127.0.0.1", 5055);
     std::cout << "CONFIGURE SIMULATION" << std::endl;
 
     // Check if enabled
@@ -405,6 +406,10 @@ std::string BasicSimulation::GetLogsDir() {
 
 std::string BasicSimulation::GetRunDir() {
     return m_run_dir;
+}
+
+SocketHelper* BasicSimulation::GetSocketHelper(){
+    return m_socket_helper;
 }
 
 }

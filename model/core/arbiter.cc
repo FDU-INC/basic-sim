@@ -1,5 +1,15 @@
+#include <iostream>
+#include <stdexcept>
+#include <cstring> // For memset and strlen
+#include <sys/socket.h> // For socket functions
+#include <unistd.h>
+#include <string.h>
+
 #include "ns3/arbiter.h"
 #include "ns3/log.h"
+#include "ns3/socket-helper.h"
+#include "ns3/message.h"
+
 namespace ns3 {
 
 // Arbiter result
@@ -65,8 +75,8 @@ Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enabl
 
 }
 
-Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable, int socket) {
-    m_socket = socket;
+Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable, SocketHelper* socketHelper) {
+    m_socketHelper = socketHelper;
     m_node_id = this_node->GetId();
     m_nodes = nodes;
     m_tap_bridge_enable = tap_bridge_enable;
@@ -96,113 +106,107 @@ uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
     }
 }
 
-// int Arbiter::createAndConnectSocket(const char* server_ip, int port) {
-//         int sock = 0;
-//         struct sockaddr_in serv_addr;
-
-//         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-//             throw std::runtime_error("Socket creation error");
-//         }
-
-//         serv_addr.sin_family = AF_INET;
-//         serv_addr.sin_port = htons(port);
-
-//         if (inet_pton(AF_INET, server_ip, &serv_addr.sin_addr) <= 0) {
-//             close(sock);
-//             throw std::runtime_error("Invalid address/ Address not supported");
-//         }
-
-//         if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-//             close(sock);
-//             throw std::runtime_error("Connection failed");
-//         }
-
-//         return sock;
-//     }
-
 ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHeader) {
+    // SocketHelper client("127.0.0.1", 5055);
+    // if (client.isEstablished()) {
+    //     std::cout << "Socket successfully established!" << std::endl;
+    // } else {
+    //     std::cout << "Failed to establish socket." << std::endl;
+    // }
+    // 获取 socket 描述符并使用它进行进一步操作
+    // int sock1 = client.getSocket_1();
+    // int sock2 = client.getSocket_2();
 
-    // Retrieve the source node id
-    uint32_t source_ip = ipHeader.GetSource().Get();
-    uint32_t source_node_id;
+    ArbiterMessage m_arbiter_message;
+    m_arbiter_message.source_ip = ipHeader.GetSource().Get();
+    m_arbiter_message.target_ip = ipHeader.GetDestination().Get();
+    bool is_socket_request_for_source_ip = (m_arbiter_message.source_ip == 1717986918);
+    if(is_socket_request_for_source_ip){
+        m_arbiter_message.source_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
+    }
+    if ((m_arbiter_message.source_ip & 0xFF) != 1) {
+        m_arbiter_message.source_ip = (m_arbiter_message.source_ip & 0xFFFFFF00) | 2; 
+    }
+    if ((m_arbiter_message.target_ip & 0xFF) != 1) {
+        m_arbiter_message.target_ip = (m_arbiter_message.target_ip & 0xFFFFFF00) | 2; 
+    }
+    std::cout << "source_ip = " << m_arbiter_message.source_ip <<std::endl;
+    std::cout << "target_ip = " << m_arbiter_message.target_ip <<std::endl;
+    std::cout << "开始发送消息 " << std::endl;
 
-    // Ipv4Address default constructor has IP 0x66666666 = 102.102.102.102 = 1717986918,
-    // which is set by TcpSocketBase::SetupEndpoint to discover its actually source IP.
-    bool is_socket_request_for_source_ip = source_ip == 1717986918;
+    this->m_socketHelper->sendMessage(&m_arbiter_message);
 
-    // const char* server_ip = "127.0.0.1";
-    //     int port = 6001;
-    //     int sock = createAndConnectSocket(server_ip, port);
-    //     if (sock == -1) {
-    //         throw std::runtime_error("Socket creation failed");
-    //     }
+    std::cout << "发送消息结束，开始接收消息!!! " << std::endl;
 
-    // If it is a request for source IP, the source node id is just the current node.
-    if (is_socket_request_for_source_ip) {
-        source_node_id = m_node_id;
-    } else {
-        if ((source_ip & 0xFF) != 1) {
-            source_ip = (source_ip & 0xFFFFFF00) | 2; 
+    Message* msg = this->m_socketHelper->receiveMessage();
+
+    std::cout << "接收消息结束 " << std::endl;
+    auto forwardingMsg = dynamic_cast<ForwardingMessage*>(msg);
+    if(forwardingMsg->type =="ForwardingMessage"){
+        std::cout << "interface1是" << forwardingMsg->interface1;
+        std::cout << "interface2是" << forwardingMsg->interface2;
+        std::cout << "next_hop_id是" << forwardingMsg->next_hop_id;
+    }
+    if (msg) {
+        // std::cout << "接收到消息类型: " << msg->type << std::endl;
+        if(auto forwardingMsg = dynamic_cast<ForwardingMessage*>(msg)){
+            uint32_t result_interface = forwardingMsg->interface1;
+            uint32_t result_next_ip =m_nodes.Get(forwardingMsg->next_hop_id)->GetObject<Ipv4>()->GetAddress(forwardingMsg->interface2 + 1, 0).GetLocal().Get();
+            std::cout << "result_next_ip是" << result_next_ip;
+            return ArbiterResult(false, result_interface + 1, result_next_ip);
         }
-        std::cerr << "source_ip" << source_ip << std::endl;
-
-        std::string message = std::to_string(source_ip);
-        message = "this is info of asking map " + message +"\0";
-        std::cerr << "message" << message << std::endl;
-        if (send(this->m_socket, message.c_str(), message.size(), 0) < 0) {
-            close(this->m_socket);
-            throw std::runtime_error("Send failed");
+        else{
+            std::cout << "接收到错误消息！" << std::endl;
+            return ArbiterResult(true, 0, 0);
         }
-        
-        std::cerr << "sending out the fucking message" << std::endl;
-        // 接收服务器的回复
-        char server_reply[2000];
-        if (recv(this->m_socket, server_reply, 2000, 0) < 0) {
-            std::cerr << "Recv failed" << std::endl;
-        }
-        std::cerr << "receive the fucking message" << std::endl;
-
-        std::cout << "Server reply: " << server_reply << std::endl;
-        uint32_t parameter = std::stoi(server_reply);
-        std::cerr << "Server reply parameter" << parameter << std::endl;
-        source_node_id = parameter;
-
-        // std::string stop_instruction = "stop";
-        // send(this->m_socket, stop_instruction.c_str(), stop_instruction.size(), 0);
     }
-    uint32_t second_parameter = ipHeader.GetDestination().Get();
-    if ((second_parameter & 0xFF) != 1) {
-        second_parameter = (second_parameter & 0xFFFFFF00) | 2; 
-    }
-    std::cerr << "second_parameter" << second_parameter << std::endl;
-    std::string message = std::to_string(second_parameter);
-    message = "this is info of asking map " + message + "\0";
-    if (send(this->m_socket, message.c_str(), message.size(), 0) < 0) {
-        close(this->m_socket);
-        throw std::runtime_error("Send failed");
-    }
-    // 接收服务器的回复
-    char server_reply2[2000];
-    if (recv(this->m_socket, server_reply2, 2000, 0) < 0) {
-        std::cerr << "Recv failed" << std::endl;
-    }
-    // std::cout << "Server reply: " << server_reply << std::endl;
-    uint32_t parameter = std::stoi(server_reply2);
-    std::cerr << "parameter2" << parameter << std::endl;
-    uint32_t target_node_id = parameter;
-
-    // std::string stop_instruction = "stop";
-    // send(this->m_socket, stop_instruction.c_str(), stop_instruction.size(), 0);
-
-    // Decide the next node
-    return Decide(
-                source_node_id,
-                target_node_id,
-                pkt,
-                ipHeader,
-                is_socket_request_for_source_ip
-    );
-
+    std::cout << "未接收到消息！" << std::endl;
+    return ArbiterResult(true, 0, 0);
 }
 
 }
+
+// uint32_t result_next_ip = msg->to_json()
+
+
+
+    // if ((source_ip & 0xFF) != 1) {
+    //     source_ip = (source_ip & 0xFFFFFF00) | 2; 
+    // }
+    // if ((target_ip & 0xFF) != 1) {
+    //     target_ip = (target_ip & 0xFFFFFF00) | 2; 
+    // }
+    // std::string message1 = std::to_string(source_ip);
+    // std::string message2 = std::to_string(target_ip);
+
+    // std::string message = "this is info of asking arbiter result " + message1 + ":" + message2 + "\0";
+    // if (send(this->m_socket, message.c_str(), message.size(), 0) < 0) {
+    //     close(this->m_socket);
+    //     throw std::runtime_error("Send failed");
+    // }
+
+    // char server_reply[2000];
+    // ssize_t recv_size = recv(this->m_socket, server_reply, sizeof(server_reply) - 1, 0);
+    // if (recv_size < 0) {
+    //     std::cerr << "Recv failed" << std::endl;
+    // } else {
+    //     server_reply[recv_size] = '\0'; // Null-terminate the received data
+    //     std::cout << "Server reply: " << server_reply << std::endl;
+    // }
+    
+    // // std::cout << "Server reply: " << server_reply << std::endl;
+
+    // std::string reply(server_reply);
+    // size_t delimiter_pos = reply.find('!');
+    // if (delimiter_pos == std::string::npos) {
+    //     std::cerr << "Delimiter '!' not found in the reply" << std::endl;
+    //     return ArbiterResult(true, 0, 0);
+    // }
+
+    // // Extract the interface and IP address
+    // std::string interface_str = reply.substr(0, delimiter_pos);
+    // std::string ip_address_str = reply.substr(delimiter_pos + 1);
+    // uint32_t result_interface = std::stoi(interface_str);
+    // uint32_t result_next_ip = std::stoi(ip_address_str);
+    
+    // return ArbiterResult(false, result_interface, result_next_ip);

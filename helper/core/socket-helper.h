@@ -15,7 +15,9 @@ public:
     ~SocketHelper();
 
     // 获取 socket 描述符
-    int getSocket() const;
+    int getSocket_1() const;
+
+    int getSocket_2() const;
 
     bool isEstablished() const;
 
@@ -25,8 +27,13 @@ public:
     // 接收消息
     Message* receiveMessage();
 
+    void closeConnection();
+
+    std::string decimalToDottedDecimal(uint32_t n);
+
 private:
-    int sock_ = -1;  // socket 文件描述符
+    int sock_1 = -1;  // socket 文件描述符
+    int sock_2 = -1;
     bool isEstablished_ = false;
 
     // 创建并连接 socket 的私有函数

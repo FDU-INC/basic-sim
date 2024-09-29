@@ -19,6 +19,8 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-header.h"
 #include "ns3/exp-util.h"
+#include "ns3/message.h"
+#include "ns3/socket-helper.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -50,11 +52,11 @@ class Arbiter : public Object
 {
 
 public:
-    // int createAndConnectSocket(const char* server_ip, int port);
+    SocketHelper* m_socketHelper;
     static TypeId GetTypeId (void);
     Arbiter(Ptr<Node> this_node, NodeContainer nodes);
     Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable);
-    Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable, int socket);
+    Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable, SocketHelper* socketHelper);
 
 
     /**
