@@ -107,33 +107,43 @@ uint32_t Arbiter::ResolveNodeIdFromIp(uint32_t ip) {
 }
 
 ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHeader) {
-    // SocketHelper client("127.0.0.1", 5055);
-    // if (client.isEstablished()) {
-    //     std::cout << "Socket successfully established!" << std::endl;
-    // } else {
-    //     std::cout << "Failed to establish socket." << std::endl;
-    // }
-    // 获取 socket 描述符并使用它进行进一步操作
-    // int sock1 = client.getSocket_1();
-    // int sock2 = client.getSocket_2();
+    ArbiterMessageProMax m_arbiter_message_promax;
+    m_arbiter_message_promax.source_ip = ipHeader.GetSource().Get();
+    m_arbiter_message_promax.current_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
+    m_arbiter_message_promax.target_ip = ipHeader.GetDestination().Get();
 
-    ArbiterMessage m_arbiter_message;
-    m_arbiter_message.source_ip = ipHeader.GetSource().Get();
-    m_arbiter_message.target_ip = ipHeader.GetDestination().Get();
+    if ((m_arbiter_message_promax.current_ip & 0xFF) != 1) {
+        m_arbiter_message_promax.current_ip = (m_arbiter_message_promax.current_ip & 0xFFFFFF00) | 2; 
+    }
+    if ((m_arbiter_message_promax.target_ip & 0xFF) != 1) {
+        m_arbiter_message_promax.target_ip = (m_arbiter_message_promax.target_ip & 0xFFFFFF00) | 2; 
+    }
+    
+
+
+    // ArbiterMessage m_arbiter_message;
+    // m_arbiter_message.source_ip = ipHeader.GetSource().Get();
+    // m_arbiter_message.target_ip = ipHeader.GetDestination().Get();
     // bool is_socket_request_for_source_ip = (m_arbiter_message.source_ip == 1717986918);
 
-    m_arbiter_message.source_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
-    if ((m_arbiter_message.source_ip & 0xFF) != 1) {
-        m_arbiter_message.source_ip = (m_arbiter_message.source_ip & 0xFFFFFF00) | 2; 
-    }
-    if ((m_arbiter_message.target_ip & 0xFF) != 1) {
-        m_arbiter_message.target_ip = (m_arbiter_message.target_ip & 0xFFFFFF00) | 2; 
-    }
-    std::cout << "source_ip = " << m_arbiter_message.source_ip <<std::endl;
-    std::cout << "target_ip = " << m_arbiter_message.target_ip <<std::endl;
+    // m_arbiter_message.source_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
+    
+    // if ((m_arbiter_message.source_ip & 0xFF) != 1) {
+    //     m_arbiter_message.source_ip = (m_arbiter_message.source_ip & 0xFFFFFF00) | 2; 
+    // }
+    // if ((m_arbiter_message.target_ip & 0xFF) != 1) {
+    //     m_arbiter_message.target_ip = (m_arbiter_message.target_ip & 0xFFFFFF00) | 2; 
+    // }
+    // std::cout << "source_ip = " << m_arbiter_message.source_ip <<std::endl;
+    // std::cout << "target_ip = " << m_arbiter_message.target_ip <<std::endl;
     std::cout << "开始发送消息 " << std::endl;
 
-    this->m_socketHelper->sendMessage(&m_arbiter_message);
+    std::cout << "source_ip = " << m_arbiter_message_promax.source_ip <<std::endl;
+    std::cout << "current_ip = " << m_arbiter_message_promax.current_ip <<std::endl;
+    std::cout << "target_ip = " << m_arbiter_message_promax.target_ip <<std::endl;
+    
+
+    this->m_socketHelper->sendMessage(&m_arbiter_message_promax);
 
     std::cout << "发送消息结束，开始接收消息!!! " << std::endl;
 
@@ -165,47 +175,4 @@ ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHea
 
 }
 
-// uint32_t result_next_ip = msg->to_json()
 
-
-
-    // if ((source_ip & 0xFF) != 1) {
-    //     source_ip = (source_ip & 0xFFFFFF00) | 2; 
-    // }
-    // if ((target_ip & 0xFF) != 1) {
-    //     target_ip = (target_ip & 0xFFFFFF00) | 2; 
-    // }
-    // std::string message1 = std::to_string(source_ip);
-    // std::string message2 = std::to_string(target_ip);
-
-    // std::string message = "this is info of asking arbiter result " + message1 + ":" + message2 + "\0";
-    // if (send(this->m_socket, message.c_str(), message.size(), 0) < 0) {
-    //     close(this->m_socket);
-    //     throw std::runtime_error("Send failed");
-    // }
-
-    // char server_reply[2000];
-    // ssize_t recv_size = recv(this->m_socket, server_reply, sizeof(server_reply) - 1, 0);
-    // if (recv_size < 0) {
-    //     std::cerr << "Recv failed" << std::endl;
-    // } else {
-    //     server_reply[recv_size] = '\0'; // Null-terminate the received data
-    //     std::cout << "Server reply: " << server_reply << std::endl;
-    // }
-    
-    // // std::cout << "Server reply: " << server_reply << std::endl;
-
-    // std::string reply(server_reply);
-    // size_t delimiter_pos = reply.find('!');
-    // if (delimiter_pos == std::string::npos) {
-    //     std::cerr << "Delimiter '!' not found in the reply" << std::endl;
-    //     return ArbiterResult(true, 0, 0);
-    // }
-
-    // // Extract the interface and IP address
-    // std::string interface_str = reply.substr(0, delimiter_pos);
-    // std::string ip_address_str = reply.substr(delimiter_pos + 1);
-    // uint32_t result_interface = std::stoi(interface_str);
-    // uint32_t result_next_ip = std::stoi(ip_address_str);
-    
-    // return ArbiterResult(false, result_interface, result_next_ip);

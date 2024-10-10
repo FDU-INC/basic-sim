@@ -26,6 +26,13 @@ Message* Message::from_json(const json& j) {
         msg->target_ip = j.at("target_ip").get<uint32_t>();
         return msg;
     }
+    else if (type == "ArbiterMessageProMax") {
+        auto* msg = new ArbiterMessageProMax();
+        msg->source_ip = j.at("source_ip").get<uint32_t>();
+        msg->current_ip = j.at("current_ip").get<uint32_t>();
+        msg->target_ip = j.at("target_ip").get<uint32_t>();
+        return msg;
+    }
     else if (type == "ForwardingMessage") {
         auto* msg = new ForwardingMessage();
         msg->interface1 = j.at("interface1").get<int>();

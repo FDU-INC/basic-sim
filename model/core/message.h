@@ -74,6 +74,26 @@ public:
     }
 };
 
+class ArbiterMessageProMax : public Message {
+public:
+    uint32_t source_ip;
+    uint32_t current_ip;
+    uint32_t target_ip;
+
+    ArbiterMessageProMax() {
+        type = "ArbiterMessageProMax";
+    }
+
+    json to_json() const override {
+        return json{
+            {"type", type},
+            {"source_ip", source_ip},
+            {"current_ip", current_ip},
+            {"target_ip", target_ip}
+        };
+    }
+};
+
 class ForwardingMessage : public Message {
 public:
     int interface1;
