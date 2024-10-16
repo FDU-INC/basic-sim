@@ -38,6 +38,26 @@ public:
     }
 };
 
+class CreateMappingMessagePlusShell : public Message {
+public:
+    int key;
+    int value;
+    int shell_num;
+
+    CreateMappingMessagePlusShell() {
+        type = "CreateMappingMessagePlusShell";
+    }
+
+    json to_json() const override {
+        return json{
+            {"type", type},
+            {"key", key},
+            {"value", value},
+            {"shell_num", shell_num}
+        };
+    }
+};
+
 // 具体消息类 ImageMessage
 class AskingMappingMessage : public Message {
 public:

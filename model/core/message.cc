@@ -15,6 +15,13 @@ Message* Message::from_json(const json& j) {
         msg->value = j.at("value").get<int>();
         return msg;
     }
+    else if (type == "CreateMappingMessagePlusShell") {
+        auto* msg = new CreateMappingMessagePlusShell();
+        msg->key = j.at("key").get<int>();
+        msg->value = j.at("value").get<int>();
+        msg->shell_num = j.at("shell_num").get<int>();
+        return msg;
+    }
     else if (type == "AskingMappingMessage") {
         auto* msg = new AskingMappingMessage();
         msg->key = j.at("key").get<int>();

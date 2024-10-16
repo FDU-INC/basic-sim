@@ -96,6 +96,8 @@ bool SocketHelper::sendMessage(Message* msg) {
         std::cout << "current_ip " << decimalToDottedDecimal(arbiterMsgProMax->current_ip) << std::endl;
         std::cout << "target_ip " << decimalToDottedDecimal(arbiterMsgProMax->target_ip) << std::endl;
         j = arbiterMsgProMax->to_json();
+    } else if(auto createMappingMessagePlusShell = dynamic_cast<CreateMappingMessagePlusShell*>(msg)){
+        j = createMappingMessagePlusShell->to_json();
     } else if (auto createMappingMsg = dynamic_cast<CreateMappingMessage*>(msg)) {
         j = createMappingMsg->to_json();
     } else if (auto askingMappingMsg = dynamic_cast<AskingMappingMessage*>(msg)) {

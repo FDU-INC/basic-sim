@@ -119,23 +119,6 @@ ArbiterResult Arbiter::BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHea
         m_arbiter_message_promax.target_ip = (m_arbiter_message_promax.target_ip & 0xFFFFFF00) | 2; 
     }
     
-
-
-    // ArbiterMessage m_arbiter_message;
-    // m_arbiter_message.source_ip = ipHeader.GetSource().Get();
-    // m_arbiter_message.target_ip = ipHeader.GetDestination().Get();
-    // bool is_socket_request_for_source_ip = (m_arbiter_message.source_ip == 1717986918);
-
-    // m_arbiter_message.source_ip = m_nodes.Get(m_node_id)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal().Get();
-    
-    // if ((m_arbiter_message.source_ip & 0xFF) != 1) {
-    //     m_arbiter_message.source_ip = (m_arbiter_message.source_ip & 0xFFFFFF00) | 2; 
-    // }
-    // if ((m_arbiter_message.target_ip & 0xFF) != 1) {
-    //     m_arbiter_message.target_ip = (m_arbiter_message.target_ip & 0xFFFFFF00) | 2; 
-    // }
-    // std::cout << "source_ip = " << m_arbiter_message.source_ip <<std::endl;
-    // std::cout << "target_ip = " << m_arbiter_message.target_ip <<std::endl;
     std::cout << "开始发送消息 " << std::endl;
 
     std::cout << "source_ip = " << m_arbiter_message_promax.source_ip <<std::endl;
