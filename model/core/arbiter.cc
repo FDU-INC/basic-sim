@@ -75,7 +75,7 @@ Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enabl
 
 }
 
-Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable, SocketHelper* socketHelper) {
+Arbiter::Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable, SocketHelper* socketHelper) {
     m_socketHelper = socketHelper;
     m_node_id = this_node->GetId();
     m_nodes = nodes;

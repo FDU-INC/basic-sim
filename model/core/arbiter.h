@@ -52,6 +52,7 @@ class Arbiter : public Object
 {
 
 public:
+
     SocketHelper* m_socketHelper;
     static TypeId GetTypeId (void);
     Arbiter(Ptr<Node> this_node, NodeContainer nodes);
@@ -127,7 +128,7 @@ protected:
     ns3::NodeContainer m_nodes;
 
 private:
-    int m_socket;
+    // int m_socket;
     std::map<uint32_t, uint32_t> m_ip_to_node_id;
     std::map<uint32_t, uint32_t>::iterator m_ip_to_node_id_it;
     bool m_tap_bridge_enable;
