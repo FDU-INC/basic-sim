@@ -134,4 +134,22 @@ public:
     }
 };
 
+class SocketConnMessage : public Message {
+public:
+    int shell_num;
+    int connType;
+
+    SocketConnMessage() {
+        type = "SocketConnMessage";
+    }
+
+    json to_json() const override {
+        return json{
+            {"type", type},
+            {"shell_num", shell_num},
+            {"connType", connType}
+        };
+    }
+};
+
 #endif // MESSAGE_HPP

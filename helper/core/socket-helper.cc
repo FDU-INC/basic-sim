@@ -6,11 +6,12 @@
 #include <cerrno>
 #include <nlohmann/json.hpp>
 
+
 using json = nlohmann::json;
 
 // SocketHelper 构造函数：创建并连接 socket
-SocketHelper::SocketHelper(const std::string& server_ip, int port) {
-    createAndConnectSocket(server_ip, port);
+SocketHelper::SocketHelper(const std::string& server_ip, int port, int shell_num) {
+    createAndConnectSocket(server_ip, port, shell_num);
 }
 
 // SocketHelper 析构函数：关闭 socket
@@ -33,7 +34,15 @@ bool SocketHelper::isEstablished() const {
 }
 
 // 创建并连接 socket 的私有函数
-void SocketHelper::createAndConnectSocket(const std::string& server_ip, int port) {
+void SocketHelper::createAndConnectSocket(const std::string& server_ip, int port, int shell_num) {
+    m_shell_num = shell_num;
+    json j;
+    std::string serialized;
+    uint32_t len = 0;
+    ssize_t sent = 0;
+
+    SocketConnMessage m_socket_conn_message;
+
     struct sockaddr_in serv_addr1;
 
     // 创建 socket
@@ -56,6 +65,28 @@ void SocketHelper::createAndConnectSocket(const std::string& server_ip, int port
         close(sock_1);
         throw std::runtime_error("Connection failed");
     }
+
+    m_socket_conn_message.shell_num = m_shell_num;
+    m_socket_conn_message.connType = 0;
+
+
+    j = m_socket_conn_message.to_json();
+    serialized = j.dump();
+
+    // 发送数据长度（4字节，网络字节序）
+    len = htonl(serialized.size());
+    sent = send(sock_1, &len, sizeof(len), 0);
+    if (sent != sizeof(len)) {
+        std::cerr << "发送数据长度失败" << std::endl;
+    }
+
+    // 发送实际数据
+    sent = send(sock_1, serialized.c_str(), serialized.size(), 0);
+    if (sent != (ssize_t)serialized.size()) {
+        std::cerr << "发送实际数据失败" << std::endl;
+    }
+
+
 
     struct sockaddr_in serv_addr2;
 
@@ -80,6 +111,25 @@ void SocketHelper::createAndConnectSocket(const std::string& server_ip, int port
         throw std::runtime_error("Connection failed");
     }
 
+    m_socket_conn_message.shell_num = m_shell_num;
+    m_socket_conn_message.connType = 1;
+
+    j = m_socket_conn_message.to_json();
+    serialized = j.dump();
+
+    // 发送数据长度（4字节，网络字节序）
+    len = htonl(serialized.size());
+    sent = send(sock_2, &len, sizeof(len), 0);
+    if (sent != sizeof(len)) {
+        std::cerr << "发送数据长度失败" << std::endl;
+    }
+
+    // 发送实际数据
+    sent = send(sock_2, serialized.c_str(), serialized.size(), 0);
+    if (sent != (ssize_t)serialized.size()) {
+        std::cerr << "发送实际数据失败" << std::endl;
+    }
+
     isEstablished_ = true;
 }
 
@@ -102,6 +152,8 @@ bool SocketHelper::sendMessage(Message* msg) {
         j = createMappingMsg->to_json();
     } else if (auto askingMappingMsg = dynamic_cast<AskingMappingMessage*>(msg)) {
         j = askingMappingMsg->to_json();
+    } else if (auto socketConnMsg = dynamic_cast<SocketConnMessage*>(msg)) {
+        j = socketConnMsg->to_json();
     } else {
         std::cerr << "未知消息类型!" << std::endl;
         return false;
@@ -172,6 +224,14 @@ void SocketHelper::closeConnection() {
         sock_2 = -1;
         isEstablished_ = false;
     }
+}
+
+void SocketHelper::set_shell_num(int shell_num) {
+    m_shell_num = shell_num;
+}
+
+int SocketHelper::get_shell_num() const {
+    return m_shell_num;
 }
 
 std::string SocketHelper::decimalToDottedDecimal(uint32_t n) {

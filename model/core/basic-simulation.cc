@@ -103,10 +103,12 @@ void BasicSimulation::ReadConfig() {
 
     m_enable_tap_bridge = parse_boolean(GetConfigParamOrDefault("enable_tap_bridge", "false"));
     m_enable_time_selection = parse_boolean(GetConfigParamOrDefault("enable_time_selection", "false"));
+    
 }
 
 void BasicSimulation::ConfigureSimulation() {
-    m_socket_helper = new SocketHelper("127.0.0.1", 5055);
+    int shell_num = parse_positive_int64(this->GetConfigParamOrDefault("shell_num", "1"));
+    m_socket_helper = new SocketHelper("127.0.0.1", 5055, shell_num);
     std::cout << "CONFIGURE SIMULATION" << std::endl;
 
     // Check if enabled

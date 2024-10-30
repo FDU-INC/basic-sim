@@ -9,7 +9,7 @@
 class SocketHelper {
 public:
     // 构造函数：接受 IP 地址和端口号并自动连接
-    SocketHelper(const std::string& server_ip, int port);
+    SocketHelper(const std::string& server_ip, int port, int shell_num);
 
     // 析构函数：确保在对象销毁时关闭 socket
     ~SocketHelper();
@@ -29,15 +29,20 @@ public:
 
     void closeConnection();
 
+    void set_shell_num(int shell_num);
+
+    int get_shell_num() const;
+
     std::string decimalToDottedDecimal(uint32_t n);
 
 private:
     int sock_1 = -1;  // socket 文件描述符
     int sock_2 = -1;
+    int m_shell_num = 0;
     bool isEstablished_ = false;
 
     // 创建并连接 socket 的私有函数
-    void createAndConnectSocket(const std::string& server_ip, int port);
+    void createAndConnectSocket(const std::string& server_ip, int port, int shell_num);
 };
 
 #endif // SOCKET_HELPER_H

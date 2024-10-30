@@ -47,6 +47,12 @@ Message* Message::from_json(const json& j) {
         msg->next_hop_id = j.at("next_hop_id").get<int>();
         return msg;
     }
+    else if (type == "SocketConnMessage") {
+        auto* msg = new SocketConnMessage();
+        msg->shell_num = j.at("shell_num").get<int>();
+        msg->connType = j.at("connType").get<int>();
+        return msg;
+    }
     else {
         // 未知类型，可以选择抛出异常或返回 nullptr
         return nullptr;
