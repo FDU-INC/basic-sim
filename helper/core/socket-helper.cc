@@ -130,6 +130,20 @@ void SocketHelper::createAndConnectSocket(const std::string& server_ip, int port
         std::cerr << "发送实际数据失败" << std::endl;
     }
 
+    // add ack
+    std::cout << "准备接收 ACK" << std::endl;
+    std::string ack_send(3, '\0');
+    recv(sock_1, &ack_send[0], 3, 0);
+    std::string ack_receive(3, '\0');
+    recv(sock_2, &ack_receive[0], 3, 0);
+    if (ack_send != "ACK" || ack_receive != "ACK") {
+        std::cerr << "收到不正确的 ACK，终止连接" << std::endl;
+        close(sock_1);
+        close(sock_2);
+        throw std::runtime_error("收到不正确的 ACK，终止连接");
+    }
+
+    std::cout << "ACK 确认，连接已建立" << std::endl;
     isEstablished_ = true;
 }
 
