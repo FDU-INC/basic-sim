@@ -8,7 +8,7 @@ from waflib import Context, Utils, Logs, Build
 # 定义proto文件路径 - 修复__file__未定义的问题
 # 使用Context.launch_dir或os.getcwd()来获取当前目录
 PROTO_SRC_DIR = os.path.normpath(os.path.join(os.getcwd(), '..', '..', 'generated', 'cpp'))
-PROTO_DST_DIR = os.path.join('helper', 'core')
+PROTO_DST_DIR = os.path.join('helper', 'proto')
 
 def options(opt):
     pass
