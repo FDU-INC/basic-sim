@@ -38,6 +38,7 @@ Message* Message::from_json(const json& j) {
         msg->source_ip = j.at("source_ip").get<uint32_t>();
         msg->current_ip = j.at("current_ip").get<uint32_t>();
         msg->target_ip = j.at("target_ip").get<uint32_t>();
+        msg->current_time =j.at("current_time").get<uint64_t>();
         return msg;
     }
     else if (type == "ForwardingMessage") {
@@ -51,6 +52,11 @@ Message* Message::from_json(const json& j) {
         auto* msg = new SocketConnMessage();
         msg->shell_num = j.at("shell_num").get<int>();
         msg->connType = j.at("connType").get<int>();
+        return msg;
+    }else if (type == "GetTimeMessage"){
+        std::cout<<"here is GetTimeMessage"<<j.at("current_time").get<uint64_t>()<<std::endl;
+        auto msg = new GetTimeMessage();
+        msg->current_time = j.at("current_time").get<uint64_t>();
         return msg;
     }
     else {

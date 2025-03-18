@@ -103,13 +103,29 @@ void BasicSimulation::ReadConfig() {
 
     m_enable_tap_bridge = parse_boolean(GetConfigParamOrDefault("enable_tap_bridge", "false"));
     m_enable_time_selection = parse_boolean(GetConfigParamOrDefault("enable_time_selection", "false"));
+    m_ns3_cache_flag = parse_boolean(GetConfigParamOrDefault("ns3_cache_flag", "false"));
     
 }
 
 void BasicSimulation::ConfigureSimulation() {
     int shell_num = parse_positive_int64(this->GetConfigParamOrDefault("shell_num", "1"));
-    m_socket_helper = new SocketHelper("127.0.0.1", 5055, shell_num);
+    
+    // 配置gRPC通道
+    // NS3服务
+    std::string ns3_server_address = "localhost:5055";
+    m_grpc_channel = grpc::CreateChannel(ns3_server_address, grpc::InsecureChannelCredentials());
+    m_ns3_service_stub = NS3::NS3Service::NewStub(m_grpc_channel);
+    
+    // 时间服务 - 连接到TimeSpectorGrpc.py
+    std::string time_server_address = "localhost:50051";
+    m_time_grpc_channel = grpc::CreateChannel(time_server_address, grpc::InsecureChannelCredentials());
+    m_time_service_stub = TimeService::TimeService::NewStub(m_time_grpc_channel);
+    
+    m_shell_num = shell_num;
+    
     std::cout << "CONFIGURE SIMULATION" << std::endl;
+    std::cout << "  > NS3 Service at: " << ns3_server_address << std::endl;
+    std::cout << "  > Time Service at: " << time_server_address << std::endl;
 
     // Check if enabled
     m_enable_distributed = parse_boolean(GetConfigParamOrDefault("enable_distributed", "false"));
@@ -410,8 +426,28 @@ std::string BasicSimulation::GetRunDir() {
     return m_run_dir;
 }
 
-SocketHelper* BasicSimulation::GetSocketHelper(){
-    return m_socket_helper;
+std::shared_ptr<grpc::Channel> BasicSimulation::GetGrpcChannel() {
+    return m_grpc_channel;
+}
+
+std::shared_ptr<NS3::NS3Service::Stub> BasicSimulation::GetNS3ServiceStub() {
+    return m_ns3_service_stub;
+}
+
+std::shared_ptr<TimeService::TimeService::Stub> BasicSimulation::GetTimeServiceStub() {
+    return m_time_service_stub;
+}
+
+std::shared_ptr<grpc::Channel> BasicSimulation::GetTimeGrpcChannel() {
+    return m_time_grpc_channel;
+}
+
+void BasicSimulation::SetShellNum(int shell_num) {
+    m_shell_num = shell_num;
+}
+
+int BasicSimulation::GetShellNum() const {
+    return m_shell_num;
 }
 
 }

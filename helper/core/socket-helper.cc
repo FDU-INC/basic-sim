@@ -152,13 +152,8 @@ bool SocketHelper::sendMessage(Message* msg) {
     json j;
 
     if (auto arbiterMsg = dynamic_cast<ArbiterMessage*>(msg)) {
-        std::cout << "source_ip " << decimalToDottedDecimal(arbiterMsg->source_ip) << std::endl;
-        std::cout << "target_ip " << decimalToDottedDecimal(arbiterMsg->target_ip) << std::endl;
         j = arbiterMsg->to_json();
     } else if(auto arbiterMsgProMax = dynamic_cast<ArbiterMessageProMax*>(msg)){
-        std::cout << "source_ip " << decimalToDottedDecimal(arbiterMsgProMax->source_ip) << std::endl;
-        std::cout << "current_ip " << decimalToDottedDecimal(arbiterMsgProMax->current_ip) << std::endl;
-        std::cout << "target_ip " << decimalToDottedDecimal(arbiterMsgProMax->target_ip) << std::endl;
         j = arbiterMsgProMax->to_json();
     } else if(auto createMappingMessagePlusShell = dynamic_cast<CreateMappingMessagePlusShell*>(msg)){
         j = createMappingMessagePlusShell->to_json();
@@ -168,6 +163,8 @@ bool SocketHelper::sendMessage(Message* msg) {
         j = askingMappingMsg->to_json();
     } else if (auto socketConnMsg = dynamic_cast<SocketConnMessage*>(msg)) {
         j = socketConnMsg->to_json();
+    } else if (auto getTimeMsg = dynamic_cast<GetTimeMessage*>(msg)) {
+        j = getTimeMsg->to_json();
     } else {
         std::cerr << "未知消息类型!" << std::endl;
         return false;
@@ -213,7 +210,7 @@ Message* SocketHelper::receiveMessage() {
         std::cerr << "接收实际数据失败" << std::endl;
         return nullptr;
     }
-
+    std::cout<<"rsv data="<<data<<std::endl;
     // 解析 JSON
     json j = json::parse(data);
     return Message::from_json(j);

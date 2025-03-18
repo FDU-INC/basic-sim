@@ -17,7 +17,7 @@ def configure(conf):
     # 在configure阶段更新路径信息
     global PROTO_SRC_DIR
     # 更新到正确的根目录 (假设ns3-sat-sim/simulator是根目录)
-    PROTO_SRC_DIR = os.path.normpath(os.path.join(conf.path.abspath(), '..', '..', '..', 'generated', 'cpp'))
+    PROTO_SRC_DIR = os.path.normpath(os.path.join(conf.path.abspath(), '..', '..', 'generated', 'cpp'))
     
     # 检查源目录是否存在
     if not os.path.exists(PROTO_SRC_DIR):
@@ -50,6 +50,17 @@ def pre_build(bld):
     dst_dir = os.path.join(bld.path.abspath(), PROTO_DST_DIR)
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir, exist_ok=True)
+    
+    # 清除目标目录中的所有文件
+    Logs.info("Cleaning proto destination directory: %s" % dst_dir)
+    for file_name in os.listdir(dst_dir):
+        file_path = os.path.join(dst_dir, file_name)
+        if os.path.isfile(file_path):
+            try:
+                os.unlink(file_path)
+                Logs.info("Removed file: %s" % file_name)
+            except Exception as e:
+                Logs.warn("Failed to remove file %s: %s" % (file_name, str(e)))
     
     # 查找所有proto生成的文件，确保每种类型的文件只包含一次
     proto_cc_files = collections.OrderedDict()  # 使用OrderedDict去重

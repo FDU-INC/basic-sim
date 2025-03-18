@@ -47,6 +47,12 @@
 #include "ns3/socket-helper.h"
 
 #include "ns3/exp-util.h"
+#include <grpcpp/grpcpp.h>
+
+#include <ns3/NS3service.grpc.pb.h>
+#include <ns3/NS3service.pb.h>
+#include <ns3/TimeService.grpc.pb.h>
+#include <ns3/TimeService.pb.h>
 
 namespace ns3 {
 
@@ -73,7 +79,16 @@ public:
     std::string GetConfigParamOrDefault(std::string key, std::string default_value);
     std::string GetLogsDir();
     std::string GetRunDir();
-    SocketHelper* GetSocketHelper();
+    std::shared_ptr<grpc::Channel> GetGrpcChannel();
+    std::shared_ptr<NS3::NS3Service::Stub> GetNS3ServiceStub();
+
+    // TimeService相关方法
+    std::shared_ptr<TimeService::TimeService::Stub> GetTimeServiceStub();
+    std::shared_ptr<grpc::Channel> GetTimeGrpcChannel();
+
+    // 设置shell_num
+    void SetShellNum(int shell_num);
+    int GetShellNum() const;
 
 private:
 
@@ -111,13 +126,23 @@ private:
     std::vector<int64_t> m_distributed_node_system_id_assignment;
     bool m_enable_tap_bridge;
     bool m_enable_time_selection;
+    bool m_ns3_cache_flag;
     // Progress show variables
     int64_t m_sim_start_time_ns_since_epoch;
     int64_t m_last_log_time_ns_since_epoch;
     int m_counter_progress_updates = 0;
     double m_progress_interval_ns = 10000000000; // First one after 10s
     double m_simulation_event_interval_s = 0.1; // Start at 100ms for a reasonable estimate
-    SocketHelper* m_socket_helper;
+
+    // gRPC相关成员变量
+    std::shared_ptr<grpc::Channel> m_grpc_channel;
+    std::shared_ptr<NS3::NS3Service::Stub> m_ns3_service_stub;
+    
+    // TimeService相关成员变量
+    std::shared_ptr<grpc::Channel> m_time_grpc_channel;
+    std::shared_ptr<TimeService::TimeService::Stub> m_time_service_stub;
+    
+    int m_shell_num;
 };
 
 }

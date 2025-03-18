@@ -1,35 +1,55 @@
 #ifndef ARBITER_H
 #define ARBITER_H
 
-
 #include <map>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <ctime>
-#include <iostream>
-#include <fstream>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <chrono>
-#include <stdexcept>
-#include "ns3/topology.h"
-#include "ns3/node-container.h"
-#include "ns3/ipv4.h"
-#include "ns3/ipv4-header.h"
-#include "ns3/exp-util.h"
-#include "ns3/message.h"
-#include "ns3/socket-helper.h"
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <cstring>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <cstdint>
+#include <cinttypes>
+#include <zlib.h>
+
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/hash.h"
+
+// 添加gRPC相关头文件
+#include <grpcpp/grpcpp.h>
+#include <ns3/NS3service.grpc.pb.h>
+#include <ns3/NS3service.pb.h>
+
+// 添加cache相关头文件
+#include <unordered_map>
+
+// 定义自定义结构体
+struct CacheKey {
+    unsigned int source_ip;
+    unsigned int current_ip;
+    unsigned int target_ip;
+
+    // 重载==运算符，确保可以在unordered_map中比较键
+    bool operator==(const CacheKey& other) const {
+        return source_ip == other.source_ip &&
+               current_ip == other.current_ip &&
+               target_ip == other.target_ip;
+    }
+};
+
+// 定义缓存结构，缓存内容包括 forwardingMsg 和 缓存时间
+struct CacheEntry {
+    NS3::ForwardingMessage response;
+    int64_t time;  // 时间戳（单位：纳秒）
+};
+
+namespace std {
+    template <>
+    struct hash<CacheKey> {
+        size_t operator()(const CacheKey& key) const {
+            size_t h1 = hash<unsigned int>{}(key.source_ip);
+            size_t h2 = hash<unsigned int>{}(key.current_ip);
+            size_t h3 = hash<unsigned int>{}(key.target_ip);
+            // 合并哈希值
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
+}
 
 namespace ns3 {
 
@@ -48,41 +68,21 @@ private:
 
 };
 
-class Arbiter : public Object
+class Arbiter : public ns3::Object
 {
 
 public:
-
-    SocketHelper* m_socketHelper;
     static TypeId GetTypeId (void);
+
     Arbiter(Ptr<Node> this_node, NodeContainer nodes);
-    Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable);
-    Arbiter(Ptr<Node> this_node, NodeContainer nodes,bool tap_bridge_enable, SocketHelper* socketHelper);
-
-
-    /**
-     * Resolve the node identifier from an IP address.
-     *
-     * @param ip    IP address
-     *
-     * @return Node identifier
-     */
+    Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable);
+    
+    // 替换SocketHelper为NS3::NS3Service::Stub
+    Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable, std::shared_ptr<NS3::NS3Service::Stub> ns3_service_stub);
+    Arbiter(Ptr<Node> this_node, NodeContainer nodes, bool tap_bridge_enable, std::shared_ptr<NS3::NS3Service::Stub> ns3_service_stub, bool time_selection_enable, uint64_t* current_time, int64_t dynamicStateUpdateIntervalNs, bool ns3_cache_flag);
+    
     uint32_t ResolveNodeIdFromIp(uint32_t ip);
-
-    /**
-     * Base decide how to forward. Directly called by ipv4-arbiter-routing.
-     * It does some nice pre-processing and checking and calls Decide() of the
-     * subclass to actually make the decision.
-     *
-     * @param pkt                               Packet
-     * @param ipHeader                          IP header of the packet
-     *
-     * @return Routing arbiter result.
-     */
-    ArbiterResult BaseDecide(
-            ns3::Ptr<const ns3::Packet> pkt,
-            ns3::Ipv4Header const &ipHeader
-    );
+    ArbiterResult BaseDecide(Ptr<const Packet> pkt, Ipv4Header const &ipHeader);
 
     /**
      * Decide what should be done with the result.
@@ -124,14 +124,21 @@ public:
     virtual std::string StringReprOfForwardingState() = 0;
 
 protected:
-    int32_t m_node_id;
-    ns3::NodeContainer m_nodes;
-
-private:
-    // int m_socket;
-    std::map<uint32_t, uint32_t> m_ip_to_node_id;
     std::map<uint32_t, uint32_t>::iterator m_ip_to_node_id_it;
-    bool m_tap_bridge_enable;
+    std::map<uint32_t, uint32_t> m_ip_to_node_id;
+    uint32_t m_node_id;
+    NodeContainer m_nodes;
+    bool m_tap_bridge_enable = false;
+    bool m_time_selection_enable = false;
+    uint64_t* m_current_time_ptr;
+    
+    // 替换SocketHelper为NS3Service::Stub
+    std::shared_ptr<NS3::NS3Service::Stub> m_ns3_service_stub;
+
+    // 添加缓存
+    bool m_ns3_cache_flag; // 缓存开关
+    int64_t m_dynamicStateUpdateIntervalNs; // 更新间隔
+    std::unordered_map<CacheKey, CacheEntry> m_cache;   // 缓存
 };
 
 }

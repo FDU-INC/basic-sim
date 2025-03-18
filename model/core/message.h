@@ -74,6 +74,21 @@ public:
         };
     }
 };
+class GetTimeMessage : public Message {
+public:
+    uint64_t current_time;
+
+    GetTimeMessage() {
+        type = "GetTimeMessage";
+    }
+
+    json to_json() const override {
+        return json{
+            {"type", type},
+            {"current_time", current_time}
+        };
+    }
+};
 
 // 具体消息类 ImageMessage
 class ArbiterMessage : public Message {
@@ -99,7 +114,7 @@ public:
     uint32_t source_ip;
     uint32_t current_ip;
     uint32_t target_ip;
-
+    uint64_t current_time;
     ArbiterMessageProMax() {
         type = "ArbiterMessageProMax";
     }
@@ -109,7 +124,8 @@ public:
             {"type", type},
             {"source_ip", source_ip},
             {"current_ip", current_ip},
-            {"target_ip", target_ip}
+            {"target_ip", target_ip},
+            {"current_time", current_time}
         };
     }
 };
